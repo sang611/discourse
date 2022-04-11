@@ -1181,6 +1181,16 @@ class TopicsController < ApplicationController
       return
     end
 
+
+    this_user = @topic_view.topic.user
+    if !this_user.admin
+      @topic_view.posts[0].cooked = @topic_view.posts[0].cooked.gsub(/\[(lock)\](.*?)\[\/\1\]/, '***')
+    else
+      @topic_view.posts[0].cooked.sub! '[lock]', ''
+      @topic_view.posts[0].cooked.sub! '[/lock]', ''
+    end
+
+
     topic_view_serializer = TopicViewSerializer.new(
       @topic_view,
       scope: guardian,
