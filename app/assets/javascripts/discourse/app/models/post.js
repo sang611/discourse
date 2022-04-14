@@ -77,9 +77,10 @@ const Post = RestModel.extend({
   updatePostField(field, value) {
     const data = {};
     data[field] = value;
-
     return ajax(`/posts/${this.id}/${field}`, { type: "PUT", data })
-      .then(() => this.set(field, value))
+      .then(() => {
+        this.set(field, value)
+      })
       .catch(popupAjaxError);
   },
 

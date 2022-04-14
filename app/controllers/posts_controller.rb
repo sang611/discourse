@@ -1,4 +1,5 @@
 # frozen_string_literal: true
+include LockTextHelper
 
 class PostsController < ApplicationController
 
@@ -27,6 +28,21 @@ class PostsController < ApplicationController
     :latest,
     :user_posts_feed
   ]
+
+  after_action :handle_lock_text_json, only: [:update, :show]
+
+  def handle_lock_text_json
+
+    raw = ",\"raw\":\""
+    before_raw = response.body.split(raw)[0]
+    after_raw = response.body.split(raw)[1]
+
+    if !current_user
+      response.body = LockTextHelper.lock_text(before_raw, false) << raw << after_raw
+    else
+      response.body = LockTextHelper.lock_text(before_raw, current_user.admin) << raw << after_raw
+    end
+  end
 
   MARKDOWN_TOPIC_PAGE_SIZE ||= 100
 

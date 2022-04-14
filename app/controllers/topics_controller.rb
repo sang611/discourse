@@ -1,4 +1,5 @@
 # frozen_string_literal: true
+include LockTextHelper
 
 class TopicsController < ApplicationController
   requires_login only: [
@@ -33,8 +34,17 @@ class TopicsController < ApplicationController
   ]
 
   before_action :consider_user_for_promotion, only: :show
-
   skip_before_action :check_xhr, only: [:show, :feed]
+
+  after_action :handle_lock_text_html, only: [:show]
+
+  def handle_lock_text_html
+    if !current_user
+      response.body = LockTextHelper.lock_text(response.body, false)
+    else
+      response.body = LockTextHelper.lock_text(response.body, current_user.admin)
+    end
+  end
 
   def id_for_slug
     topic = Topic.find_by_slug(params[:slug])
@@ -47,6 +57,8 @@ class TopicsController < ApplicationController
     topic = Topic.find_by(external_id: params[:external_id])
     raise Discourse::NotFound unless topic
     guardian.ensure_can_see!(topic)
+
+
     redirect_to_correct_topic(topic, params[:post_number])
   end
 
@@ -165,6 +177,7 @@ class TopicsController < ApplicationController
         response.headers['Last-Modified'] = last_modified
       end
     end
+
 
     perform_show_response
   end
@@ -1174,22 +1187,14 @@ class TopicsController < ApplicationController
     !!((!request.format.json? || params[:track_visit]) && current_user)
   end
 
+
+
   def perform_show_response
 
     if request.head?
       head :ok
       return
     end
-
-
-    this_user = @topic_view.topic.user
-    if !this_user.admin
-      @topic_view.posts[0].cooked = @topic_view.posts[0].cooked.gsub(/\[(lock)\](.*?)\[\/\1\]/, '***')
-    else
-      @topic_view.posts[0].cooked.sub! '[lock]', ''
-      @topic_view.posts[0].cooked.sub! '[/lock]', ''
-    end
-
 
     topic_view_serializer = TopicViewSerializer.new(
       @topic_view,
