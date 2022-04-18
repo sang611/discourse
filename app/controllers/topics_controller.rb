@@ -36,15 +36,19 @@ class TopicsController < ApplicationController
   before_action :consider_user_for_promotion, only: :show
   skip_before_action :check_xhr, only: [:show, :feed]
 
+=begin
   after_action :handle_lock_text_html, only: [:show]
 
   def handle_lock_text_html
     if !current_user
-      response.body = LockTextHelper.lock_text(response.body, false)
+      response.body = LockTextHelper.lock_text(response.body, false, false)
     else
-      response.body = LockTextHelper.lock_text(response.body, current_user.admin)
+      @topic_view.posts.each {|post| post.cooked = LockTextHelper.lock_text(post.cooked, current_user.admin, current_user.id == post.user_id)}
     end
+
+    perform_show_response
   end
+=end
 
   def id_for_slug
     topic = Topic.find_by_slug(params[:slug])
@@ -57,7 +61,6 @@ class TopicsController < ApplicationController
     topic = Topic.find_by(external_id: params[:external_id])
     raise Discourse::NotFound unless topic
     guardian.ensure_can_see!(topic)
-
 
     redirect_to_correct_topic(topic, params[:post_number])
   end
@@ -114,8 +117,8 @@ class TopicsController < ApplicationController
 
       deleted = guardian.can_see_topic?(ex.obj, false) ||
         (!guardian.can_see_topic?(ex.obj) &&
-         ex.obj&.access_topic_via_group &&
-         ex.obj.deleted_at)
+          ex.obj&.access_topic_via_group &&
+          ex.obj.deleted_at)
 
       if SiteSetting.detailed_404
         if deleted
@@ -177,7 +180,6 @@ class TopicsController < ApplicationController
         response.headers['Last-Modified'] = last_modified
       end
     end
-
 
     perform_show_response
   end
@@ -280,23 +282,23 @@ class TopicsController < ApplicationController
     guardian.ensure_can_see!(@topic)
 
     @posts = Post.where(hidden: false, deleted_at: nil, topic_id: @topic.id)
-      .where('posts.id in (?)', post_ids)
-      .joins("LEFT JOIN users u on u.id = posts.user_id")
-      .pluck(:id, :cooked, :username, :action_code, :created_at)
-      .map do |post_id, cooked, username, action_code, created_at|
-        attrs = {
-          post_id: post_id,
-          username: username,
-          excerpt: PrettyText.excerpt(cooked, 800, keep_emoji_images: true),
-        }
+                 .where('posts.id in (?)', post_ids)
+                 .joins("LEFT JOIN users u on u.id = posts.user_id")
+                 .pluck(:id, :cooked, :username, :action_code, :created_at)
+                 .map do |post_id, cooked, username, action_code, created_at|
+      attrs = {
+        post_id: post_id,
+        username: username,
+        excerpt: PrettyText.excerpt(cooked, 800, keep_emoji_images: true),
+      }
 
-        if action_code
-          attrs[:action_code] = action_code
-          attrs[:created_at] = created_at
-        end
-
-        attrs
+      if action_code
+        attrs[:action_code] = action_code
+        attrs[:created_at] = created_at
       end
+
+      attrs
+    end
 
     render json: @posts.to_json
   end
@@ -311,13 +313,13 @@ class TopicsController < ApplicationController
     end
 
     last_notification = Notification
-      .where(
-        user_id: current_user.id,
-        topic_id: topic_id
-      )
-      .order(created_at: :desc)
-      .limit(1)
-      .first
+                          .where(
+                            user_id: current_user.id,
+                            topic_id: topic_id
+                          )
+                          .order(created_at: :desc)
+                          .limit(1)
+                          .first
 
     if last_notification
       last_notification.update!(read: false)
@@ -582,7 +584,7 @@ class TopicsController < ApplicationController
     group_ids = current_user.groups.pluck(:id)
     if group_ids.present?
       allowed_groups = topic.allowed_groups
-        .where('topic_allowed_groups.group_id IN (?)', group_ids).pluck(:id)
+                            .where('topic_allowed_groups.group_id IN (?)', group_ids).pluck(:id)
 
       allowed_groups.each do |id|
         if archive
@@ -752,10 +754,10 @@ class TopicsController < ApplicationController
 
         unless topic.private_message?
           group_names = topic.category
-            .visible_group_names(current_user)
-            .where(automatic: false)
-            .pluck(:name)
-            .join(", ")
+                             .visible_group_names(current_user)
+                             .where(automatic: false)
+                             .pluck(:name)
+                             .join(", ")
 
           if group_names.present?
             json.merge!(errors: [
@@ -924,8 +926,8 @@ class TopicsController < ApplicationController
 
       deleted = guardian.can_see_topic?(ex.obj, false) ||
         (!guardian.can_see_topic?(ex.obj) &&
-         ex.obj&.access_topic_via_group &&
-         ex.obj.deleted_at)
+          ex.obj&.access_topic_via_group &&
+          ex.obj.deleted_at)
 
       raise Discourse::NotFound.new(
         nil,
@@ -955,9 +957,9 @@ class TopicsController < ApplicationController
     end
 
     operation = params
-      .require(:operation)
-      .permit(:type, :group, :category_id, :notification_level_id, *DiscoursePluginRegistry.permitted_bulk_action_parameters, tags: [])
-      .to_h.symbolize_keys
+                  .require(:operation)
+                  .permit(:type, :group, :category_id, :notification_level_id, *DiscoursePluginRegistry.permitted_bulk_action_parameters, tags: [])
+                  .to_h.symbolize_keys
 
     raise ActionController::ParameterMissing.new(:operation_type) if operation[:type].blank?
     operator = TopicsBulkAction.new(current_user, topic_ids, operation, group: operation[:group])
@@ -976,8 +978,8 @@ class TopicsController < ApplicationController
       end
 
       topic_scope = topic_query
-        .private_messages_for(current_user, :all)
-        .where("topics.id IN (?)", params[:topic_ids].map(&:to_i))
+                      .private_messages_for(current_user, :all)
+                      .where("topics.id IN (?)", params[:topic_ids].map(&:to_i))
     else
       params.require(:inbox)
       inbox = params[:inbox].to_s
@@ -1147,7 +1149,7 @@ class TopicsController < ApplicationController
   end
 
   def track_visit_to_topic
-    topic_id =  @topic_view.topic.id
+    topic_id = @topic_view.topic.id
     ip = request.remote_ip
     user_id = (current_user.id if current_user)
     track_visit = should_track_visit_to_topic?
@@ -1187,9 +1189,15 @@ class TopicsController < ApplicationController
     !!((!request.format.json? || params[:track_visit]) && current_user)
   end
 
-
-
   def perform_show_response
+
+    if current_user
+      @topic_view.posts.each {|post| post.cooked = LockTextHelper.lock_text(post.cooked, current_user.admin, current_user.id == post.user_id)}
+    else
+      @topic_view.posts.each {|post| post.cooked = LockTextHelper.lock_text(post.cooked, false, false)}
+    end
+
+
 
     if request.head?
       head :ok

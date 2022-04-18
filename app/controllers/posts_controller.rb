@@ -29,19 +29,32 @@ class PostsController < ApplicationController
     :user_posts_feed
   ]
 
-  after_action :handle_lock_text_json, only: [:update, :show]
+  after_action :handle_lock_text_json, only: [:create, :update, :show]
 
   def handle_lock_text_json
-
+=begin
     raw = ",\"raw\":\""
-    before_raw = response.body.split(raw)[0]
-    after_raw = response.body.split(raw)[1]
+    unless response.body.nil?
 
-    if !current_user
-      response.body = LockTextHelper.lock_text(before_raw, false) << raw << after_raw
-    else
-      response.body = LockTextHelper.lock_text(before_raw, current_user.admin) << raw << after_raw
+      before_raw = response.body.split(raw)[0]
+
+      if response.body.split(raw).length == 1
+        after_raw = ""
+        raw = ""
+      else
+        after_raw = response.body.split(raw)[1]
+      end
+
+      if !current_user
+        response.body = LockTextHelper.lock_text(before_raw, false) << raw << after_raw
+      else
+        response.body = LockTextHelper.lock_text(before_raw, current_user.admin) << raw << after_raw
+      end
+
     end
+
+    response.content_type=('application/json')
+=end
   end
 
   MARKDOWN_TOPIC_PAGE_SIZE ||= 100
@@ -82,23 +95,23 @@ class PostsController < ApplicationController
     if params[:id] == "private_posts"
       raise Discourse::NotFound if current_user.nil?
       posts = Post.private_posts
-        .order(created_at: :desc)
-        .where('posts.id <= ?', last_post_id)
-        .where('posts.id > ?', last_post_id - 50)
-        .includes(topic: :category)
-        .includes(user: [:primary_group, :flair_group])
-        .includes(:reply_to_user)
-        .limit(50)
+                  .order(created_at: :desc)
+                  .where('posts.id <= ?', last_post_id)
+                  .where('posts.id > ?', last_post_id - 50)
+                  .includes(topic: :category)
+                  .includes(user: [:primary_group, :flair_group])
+                  .includes(:reply_to_user)
+                  .limit(50)
       rss_description = I18n.t("rss_description.private_posts")
     else
       posts = Post.public_posts
-        .order(created_at: :desc)
-        .where('posts.id <= ?', last_post_id)
-        .where('posts.id > ?', last_post_id - 50)
-        .includes(topic: :category)
-        .includes(user: [:primary_group, :flair_group])
-        .includes(:reply_to_user)
-        .limit(50)
+                  .order(created_at: :desc)
+                  .where('posts.id <= ?', last_post_id)
+                  .where('posts.id > ?', last_post_id - 50)
+                  .includes(topic: :category)
+                  .includes(user: [:primary_group, :flair_group])
+                  .includes(:reply_to_user)
+                  .limit(50)
       rss_description = I18n.t("rss_description.posts")
       @use_canonical = true
     end
@@ -124,7 +137,7 @@ class PostsController < ApplicationController
                                         add_raw: true,
                                         add_title: true,
                                         all_post_actions: counts)
-                                      )
+        )
       end
     end
   end
@@ -135,12 +148,12 @@ class PostsController < ApplicationController
     raise Discourse::NotFound unless guardian.can_see_profile?(user)
 
     posts = Post.public_posts
-      .where(user_id: user.id)
-      .where(post_type: Post.types[:regular])
-      .order(created_at: :desc)
-      .includes(:user)
-      .includes(topic: :category)
-      .limit(50)
+                .where(user_id: user.id)
+                .where(post_type: Post.types[:regular])
+                .order(created_at: :desc)
+                .includes(:user)
+                .includes(topic: :category)
+                .limit(50)
 
     posts = posts.reject { |post| !guardian.can_see?(post) || post.topic.blank? }
 
@@ -158,7 +171,7 @@ class PostsController < ApplicationController
                                         PostSerializer,
                                         scope: guardian,
                                         add_excerpt: true)
-                                      )
+        )
       end
     end
 
@@ -224,8 +237,8 @@ class PostsController < ApplicationController
     post.image_sizes = params[:image_sizes] if params[:image_sizes].present?
 
     if !guardian.public_send("can_edit?", post) &&
-       post.user_id == current_user.id &&
-       post.edit_time_limit_expired?(current_user)
+      post.user_id == current_user.id &&
+      post.edit_time_limit_expired?(current_user)
 
       return render_json_error(I18n.t('too_late_to_edit'))
     end
@@ -612,7 +625,7 @@ class PostsController < ApplicationController
     limit = [(params[:limit] || 60).to_i, 100].min
 
     posts = user_posts(guardian, user.id, offset: offset, limit: limit)
-      .where(id: PostAction.where(post_action_type_id: PostActionType.notify_flag_type_ids)
+              .where(id: PostAction.where(post_action_type_id: PostActionType.notify_flag_type_ids)
                                    .where(disagreed_at: nil)
                                    .select(:post_id))
 
@@ -715,9 +728,9 @@ class PostsController < ApplicationController
 
   def user_posts(guardian, user_id, opts)
     posts = Post.includes(:user, :topic, :deleted_by, :user_actions)
-      .where(user_id: user_id)
-      .with_deleted
-      .order(created_at: :desc)
+                .where(user_id: user_id)
+                .with_deleted
+                .order(created_at: :desc)
 
     if guardian.user.moderator?
 
@@ -731,7 +744,7 @@ class PostsController < ApplicationController
     end
 
     posts.offset(opts[:offset])
-      .limit(opts[:limit])
+         .limit(opts[:limit])
   end
 
   def create_params
@@ -753,14 +766,14 @@ class PostsController < ApplicationController
 
     Post.plugin_permitted_create_params.each do |key, value|
       if value[:plugin].enabled?
-        permitted <<  case value[:type]
-                      when :string
-                        key.to_sym
-                      when :array
-                        { key => [] }
-                      when :hash
-                        { key => {} }
-        end
+        permitted << case value[:type]
+                     when :string
+                       key.to_sym
+                     when :array
+                       { key => [] }
+                     when :hash
+                       { key => {} }
+                     end
       end
     end
 
@@ -850,12 +863,12 @@ class PostsController < ApplicationController
 
   def signature_for(args)
     +"post##" << Digest::SHA1.hexdigest(args
-      .to_h
-      .to_a
-      .concat([["user", current_user.id]])
-      .sort { |x, y| x[0] <=> y[0] }.join do |x, y|
-        "#{x}:#{y}"
-      end)
+                                          .to_h
+                                          .to_a
+                                          .concat([["user", current_user.id]])
+                                          .sort { |x, y| x[0] <=> y[0] }.join do |x, y|
+      "#{x}:#{y}"
+    end)
   end
 
   def display_post(post)
@@ -875,10 +888,10 @@ class PostsController < ApplicationController
 
   def find_post_from_params_by_date
     by_date_finder = TopicView.new(params[:topic_id], current_user)
-      .filtered_posts
-      .where("created_at >= ?", Time.zone.parse(params[:date]))
-      .order("created_at ASC")
-      .limit(1)
+                              .filtered_posts
+                              .where("created_at >= ?", Time.zone.parse(params[:date]))
+                              .order("created_at ASC")
+                              .limit(1)
 
     find_post_using(by_date_finder)
   end
@@ -893,10 +906,10 @@ class PostsController < ApplicationController
     post.topic = Topic.with_deleted.find_by(id: post.topic_id)
 
     if !post.topic ||
-       (
+      (
         (post.deleted_at.present? || post.topic.deleted_at.present?) &&
-        !guardian.can_moderate_topic?(post.topic)
-       )
+          !guardian.can_moderate_topic?(post.topic)
+      )
       raise Discourse::NotFound
     end
 

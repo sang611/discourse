@@ -6,13 +6,13 @@
 # author: Joffrey Jaffeux
 # transpile_js: true
 
-hide_plugin if self.respond_to?(:hide_plugin)
+# hide_plugin if self.respond_to?(:hide_plugin)
 
 register_asset 'stylesheets/common/discourse-local-dates.scss'
 register_asset 'moment.js', :vendored_core_pretty_text
 register_asset 'moment-timezone.js', :vendored_core_pretty_text
 
-enabled_site_setting :discourse_local_dates_enabled
+# enabled_site_setting :discourse_local_dates_enabled
 
 after_initialize do
   module ::DiscourseLocalDates
@@ -41,6 +41,7 @@ after_initialize do
         end
       end
       dates << date
+
     end
 
     if dates.present?
