@@ -1,4 +1,4 @@
-import { ajax } from "discourse/lib/ajax";
+/import {ajax} from "discourse/lib/ajax";
 import {
   caretPosition,
   inCodeBlock,
@@ -9,32 +9,32 @@ import discourseComputed, {
   observes,
   on,
 } from "discourse-common/utils/decorators";
-import { emojiSearch, isSkinTonableEmoji } from "pretty-text/emoji";
-import { emojiUrlFor, generateCookFunction } from "discourse/lib/text";
-import { schedule, scheduleOnce } from "@ember/runloop";
+import {emojiSearch, isSkinTonableEmoji} from "pretty-text/emoji";
+import {emojiUrlFor, generateCookFunction} from "discourse/lib/text";
+import {schedule, scheduleOnce} from "@ember/runloop";
 import Component from "@ember/component";
 import I18n from "I18n";
 import ItsATrap from "@discourse/itsatrap";
-import { Promise } from "rsvp";
-import { SKIP } from "discourse/lib/autocomplete";
-import { categoryHashtagTriggerRule } from "discourse/lib/category-hashtags";
+import {Promise} from "rsvp";
+import {SKIP} from "discourse/lib/autocomplete";
+import {categoryHashtagTriggerRule} from "discourse/lib/category-hashtags";
 import deprecated from "discourse-common/lib/deprecated";
 import discourseDebounce from "discourse-common/lib/debounce";
-import { findRawTemplate } from "discourse-common/lib/raw-templates";
-import { getRegister } from "discourse-common/lib/get-owner";
-import { isTesting } from "discourse-common/config/environment";
-import { linkSeenHashtags } from "discourse/lib/link-hashtags";
-import { linkSeenMentions } from "discourse/lib/link-mentions";
-import { loadOneboxes } from "discourse/lib/load-oneboxes";
+import {findRawTemplate} from "discourse-common/lib/raw-templates";
+import {getRegister} from "discourse-common/lib/get-owner";
+import {isTesting} from "discourse-common/config/environment";
+import {linkSeenHashtags} from "discourse/lib/link-hashtags";
+import {linkSeenMentions} from "discourse/lib/link-mentions";
+import {loadOneboxes} from "discourse/lib/load-oneboxes";
 import loadScript from "discourse/lib/load-script";
-import { resolveCachedShortUrls } from "pretty-text/upload-short-url";
-import { search as searchCategoryTag } from "discourse/lib/category-tag-search";
-import { inject as service } from "@ember/service";
+import {resolveCachedShortUrls} from "pretty-text/upload-short-url";
+import {search as searchCategoryTag} from "discourse/lib/category-tag-search";
+import {inject as service} from "@ember/service";
 import showModal from "discourse/lib/show-modal";
-import { siteDir } from "discourse/lib/text-direction";
-import { translations } from "pretty-text/emoji/data";
-import { wantsNewWindow } from "discourse/lib/intercept-click";
-import { action } from "@ember/object";
+import {siteDir} from "discourse/lib/text-direction";
+import {translations} from "pretty-text/emoji/data";
+import {wantsNewWindow} from "discourse/lib/intercept-click";
+import {action} from "@ember/object";
 import TextareaTextManipulation, {
   getHead,
 } from "discourse/mixins/textarea-text-manipulation";
@@ -50,14 +50,14 @@ let _createCallbacks = [];
 
 class Toolbar {
   constructor(opts) {
-    const { site, siteSettings } = opts;
+    const {site, siteSettings} = opts;
     this.shortcuts = {};
     this.context = null;
 
     this.groups = [
-      { group: "fontStyles", buttons: [] },
-      { group: "insertions", buttons: [] },
-      { group: "extras", buttons: [] },
+      {group: "fontStyles", buttons: []},
+      {group: "insertions", buttons: []},
+      {group: "extras", buttons: []},
     ];
 
     this.addButton({
@@ -141,6 +141,17 @@ class Toolbar {
       });
     }
 
+    this.addButton({
+      id: "lock",
+      group: "extras",
+      icon: "lock",
+      shortcut: "",
+      title: "composer.lock_title",
+      preventFocus: true,
+      trimLeading: true,
+      perform: (e) => e.applySurround("[lock]", "[/lock]", "lock_title"),
+    });
+
     if (siteSettings.support_mixed_text_direction) {
       this.addButton({
         id: "toggle-direction",
@@ -169,7 +180,8 @@ class Toolbar {
       label: button.label,
       icon: button.label ? null : button.icon || button.id,
       action: button.action || ((a) => this.context.send("toolbarButton", a)),
-      perform: button.perform || function () {},
+      perform: button.perform || function () {
+      },
       trimLeading: button.trimLeading,
       popupMenu: button.popupMenu || false,
       preventFocus: button.preventFocus || false,
@@ -205,6 +217,7 @@ class Toolbar {
 export function addToolbarCallback(func) {
   _createCallbacks.push(func);
 }
+
 export function clearToolbarCallbacks() {
   _createCallbacks = [];
 }
@@ -513,7 +526,7 @@ export default Component.extend(TextareaTextManipulation, {
           this.emojiStore.track(v.code);
           return `${v.code}:`;
         } else {
-          $textarea.autocomplete({ cancel: true });
+          $textarea.autocomplete({cancel: true});
           this.set("emojiPickerIsActive", true);
           this.set("emojiFilter", v.term);
 
@@ -578,12 +591,12 @@ export default Component.extend(TextareaTextManipulation, {
         })
           .then((list) =>
             list.map((code) => {
-              return { code, src: emojiUrlFor(code) };
+              return {code, src: emojiUrlFor(code)};
             })
           )
           .then((list) => {
             if (list.length) {
-              list.push({ label: I18n.t("composer.more_emoji"), term });
+              list.push({label: I18n.t("composer.more_emoji"), term});
             }
             return list;
           });
@@ -642,7 +655,7 @@ export default Component.extend(TextareaTextManipulation, {
     while (
       target.parentNode &&
       !target.parentNode.classList.contains("d-editor-button-bar")
-    ) {
+      ) {
       target = target.parentNode;
     }
 
@@ -652,7 +665,7 @@ export default Component.extend(TextareaTextManipulation, {
         (focusable.tagName !== "BUTTON" &&
           !focusable.classList.contains("select-kit")) ||
         focusable.classList.contains("hidden")
-      ) {
+        ) {
         focusable = focusable[siblingFinder];
       }
 
@@ -684,7 +697,7 @@ export default Component.extend(TextareaTextManipulation, {
       const toolbarEvent = {
         selected,
         selectText: (from, length) =>
-          this.selectText(from, length, { scroll: false }),
+          this.selectText(from, length, {scroll: false}),
         applySurround: (head, tail, exampleKey, opts) =>
           this.applySurround(selected, head, tail, exampleKey, opts),
         applyList: (head, exampleKey, opts) =>
@@ -724,7 +737,7 @@ export default Component.extend(TextareaTextManipulation, {
         return;
       }
 
-      const sel = this.getSelected("", { lineVal: true });
+      const sel = this.getSelected("", {lineVal: true});
       const selValue = sel.value;
       const hasNewLine = selValue.indexOf("\n") !== -1;
       const isBlankLine = sel.lineVal.trim().length === 0;
@@ -756,6 +769,82 @@ export default Component.extend(TextareaTextManipulation, {
         }
       }
     },
+
+
+
+    /*lockText() {
+      if (this.disabled) {
+        return;
+      }
+      const sel = this.getSelected("", {lineVal: true});
+      const selValue = sel.value;
+      const hasNewLine = selValue.indexOf("\n") !== -1;
+      const isBlankLine = sel.lineVal.trim().length === 0;
+      const isFourSpacesIndent =
+        this.siteSettings.code_formatting_style === FOUR_SPACES_INDENT;
+
+      if (!hasNewLine) {
+        if (selValue.length === 0 && isBlankLine) {
+          if (isFourSpacesIndent) {
+            const example = I18n.t(`composer.code_text`);
+            this.set("value", `${sel.pre}    ${example}${sel.post}`);
+            return this.selectText(sel.pre.length + 4, example.length);
+          } else {
+            return this.applySurround(sel, "[lock]", "[/lock]", "paste_code_text");
+          }
+        } else {
+          return this.applySurround(sel, "[lock]", "[/lock]", "code_title");
+        }
+      } else {
+        if (isFourSpacesIndent) {
+          return this.applySurround(sel, "[lock]", "[/lock]", "code_text");
+        } else {
+          const preNewline = sel.pre[-1] !== "\n" && sel.pre !== "" ? "\n" : "";
+          const postNewline = sel.post[0] !== "\n" ? "\n" : "";
+          return this.addText(
+            sel,
+            `${preNewline}[lock]${sel.value}[/lock]${postNewline}`
+          );
+        }
+      }
+    },*/
+
+    /*lockText() {
+      if (this.disabled) {
+        return;
+      }
+      const sel = this._getSelected("", {lineVal: true});
+      const selValue = sel.value;
+      const hasNewLine = selValue.indexOf("\n") !== -1;
+      const isBlankLine = sel.lineVal.trim().length === 0;
+      const isFourSpacesIndent =
+        this.siteSettings.code_formatting_style === FOUR_SPACES_INDENT;
+
+      if (!hasNewLine) {
+        if (selValue.length === 0 && isBlankLine) {
+          if (isFourSpacesIndent) {
+            const example = I18n.t(`composer.code_text`);
+            this.set("value", `${sel.pre}    ${example}${sel.post}`);
+            return this._selectText(sel.pre.length + 4, example.length);
+          } else {
+            return this._applySurround(sel, "[lock]", "[/lock]", "paste_code_text");
+          }
+        } else {
+          return this._applySurround(sel, "[lock]", "[/lock]", "code_title");
+        }
+      } else {
+        if (isFourSpacesIndent) {
+          return this._applySurround(sel, "[lock]", "[/lock]", "code_text");
+        } else {
+          const preNewline = sel.pre[-1] !== "\n" && sel.pre !== "" ? "\n" : "";
+          const postNewline = sel.post[0] !== "\n" ? "\n" : "";
+          return this._addText(
+            sel,
+            `${preNewline}[lock]${sel.value}[/lock]${postNewline}`
+          );
+        }
+      }
+    },*/
 
     focusIn() {
       this.set("isEditorFocused", true);

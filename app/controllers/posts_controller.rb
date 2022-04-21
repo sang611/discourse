@@ -32,12 +32,10 @@ class PostsController < ApplicationController
   after_action :handle_lock_text_json, only: [:create, :update, :show]
 
   def handle_lock_text_json
-=begin
+    puts "))))))))))))))))))))))))))))))" + response.body
     raw = ",\"raw\":\""
     unless response.body.nil?
-
       before_raw = response.body.split(raw)[0]
-
       if response.body.split(raw).length == 1
         after_raw = ""
         raw = ""
@@ -46,15 +44,22 @@ class PostsController < ApplicationController
       end
 
       if !current_user
-        response.body = LockTextHelper.lock_text(before_raw, false) << raw << after_raw
+        response.body = LockTextHelper.lock_text(before_raw, false, false) << raw << after_raw
       else
-        response.body = LockTextHelper.lock_text(before_raw, current_user.admin) << raw << after_raw
+        yours_str = ",\"yours\":"
+        is_yours = response.body.split(yours_str)[1].slice(0, 5)
+        puts "))))))))))))))))))))))))))))))" + is_yours
+        if is_yours == "false"
+          is_yours = false
+        else
+          is_yours = true
+        end
+        response.body = LockTextHelper.lock_text(before_raw, current_user.admin, is_yours) << raw << after_raw
       end
-
     end
 
     response.content_type=('application/json')
-=end
+
   end
 
   MARKDOWN_TOPIC_PAGE_SIZE ||= 100

@@ -36,20 +36,6 @@ class TopicsController < ApplicationController
   before_action :consider_user_for_promotion, only: :show
   skip_before_action :check_xhr, only: [:show, :feed]
 
-=begin
-  after_action :handle_lock_text_html, only: [:show]
-
-  def handle_lock_text_html
-    if !current_user
-      response.body = LockTextHelper.lock_text(response.body, false, false)
-    else
-      @topic_view.posts.each {|post| post.cooked = LockTextHelper.lock_text(post.cooked, current_user.admin, current_user.id == post.user_id)}
-    end
-
-    perform_show_response
-  end
-=end
-
   def id_for_slug
     topic = Topic.find_by_slug(params[:slug])
     guardian.ensure_can_see!(topic)
@@ -1196,8 +1182,6 @@ class TopicsController < ApplicationController
     else
       @topic_view.posts.each {|post| post.cooked = LockTextHelper.lock_text(post.cooked, false, false)}
     end
-
-
 
     if request.head?
       head :ok

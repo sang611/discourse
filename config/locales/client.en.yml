@@ -2203,6 +2203,7 @@ en:
       upload_description: "enter upload description here"
       olist_title: "Numbered List"
       ulist_title: "Bulleted List"
+      lock_title: "Lock text"
       list_item: "List item"
       toggle_direction: "Toggle Direction"
       help: "Markdown Editing Help"
