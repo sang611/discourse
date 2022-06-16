@@ -1177,15 +1177,17 @@ class TopicsController < ApplicationController
 
   def perform_show_response
 
-    if current_user
-      @topic_view.posts.each {|post| post.cooked = LockTextHelper.lock_text(post.cooked, current_user.admin, current_user.id == post.user_id)}
-    else
-      @topic_view.posts.each {|post| post.cooked = LockTextHelper.lock_text(post.cooked, false, false)}
-    end
+
 
     if request.head?
       head :ok
       return
+    end
+
+    if current_user
+      @topic_view.posts.each {|post| post.cooked = LockTextHelper.lock_text(post.cooked, current_user.admin, current_user.id == post.user_id)}
+    else
+      @topic_view.posts.each {|post| post.cooked = LockTextHelper.lock_text(post.cooked, false, false)}
     end
 
     topic_view_serializer = TopicViewSerializer.new(
